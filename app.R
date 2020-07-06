@@ -205,7 +205,7 @@ server=function(input, output, session) {
       seqpost[seqpost %in% tapply(seqpost, week(seqpost), last)]))
     labperiod1 <- sapply(seq(length(cutdate)-1), function(i)
       paste(paste0(day(cutdate[i]+1), format(cutdate[i]+1, format="%b")),
-        paste0(day(cutdate[i+1]), month(cutdate[i+1],lab=T)), sep="-"))
+        paste0(day(cutdate[i+1]), format(cutdate[i+1], format="%b")), sep="-"))
     
     # START PLOT
     plot <- ggplot(plot_df(), aes(x=period_n, y=out))
