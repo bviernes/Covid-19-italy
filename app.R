@@ -5,6 +5,7 @@ library(shiny)
 library(dplyr)
 library(ggplot2)
 library(shinythemes)
+library(lubridate)
 library(data.table)
 #GLOBAL
 rbPal <- colorRampPalette(c('blue','red'))
@@ -85,264 +86,225 @@ province_map$id=as.character((1:nrow(province_map@data))+21)
 
 #UI
 ui <- navbarPage("Covid-19 mortality", id="nav",
-           
-           tabPanel("Interactive map",
-                    div(class="outer",
-                        tags$head(
-                          # Include our custom CSS
-                          includeCSS("styles.css")
-                          # includeScript("gomap.js")
-                        ),    
-                        
-                        # If not using custom CSS, set height of leafletOutput to a number instead of percent
-                        leafletOutput("myMap", width="100%", height="100%"),
-                        
-                        # Shiny versions prior to 0.11 should use class = "modal" instead.
-                        absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
-                                      draggable = FALSE, top = 60, left = "auto", right = "auto", bottom = "auto",
-                                      width = 400, height = "auto",
-                                      
-                                      h2("Select population"),
-                                      
-                                      selectInput("agegroup", "Age category", age_opt,selected="All ages"),
-                                      selectInput("sex", "Sex", sex_opt, selected = "Total"),
-                                      selectInput("period", "Period", period_opt, selected = "15Feb-15May"),
-
-                                      #plotOutput("excess_plot", height = 280),
-                                      h2("Select area to map"),
-                                      selectInput("mapping", "Map", c("Regions","Provinces"), selected = "Provinces"),
-                                      sliderInput(inputId = "opacity_slider", label = "Map opacity", min = 0, max = 1, value = 1),
-                                      span(tags$i(h4("Click on the map to get additional\narea specific informations")), style="color:#8B0000")                                      
-                                      
-                                      
-                        ))),
-           tabPanel("Time trend",
-                    fluidPage(theme = shinytheme("flatly")),
-                    tags$head(
-                          # Include our custom CSS
-                          includeCSS("styles.css")
-                          # includeScript("gomap.js")
-                        ),
-                    column(offset=4,width=8,br(),br(),br(),plotOutput("excess_plot",height="600px")),
-                    
-                        absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
-                                      draggable = FALSE, top = 60, left = "auto", right = "auto", bottom = "auto",
-                                      width = "auto", height = "auto",
-                                      
-                                      h2("Select population"),
-                                      
-                                      selectInput("agegroup2", "Age category", age_opt,selected="All ages"),
-                                      selectInput("sex2", "Sex", sex_opt, selected = "Total"),
-                                      selectInput("outcome", "Outcome",c("Daily deaths","Daily excess","Weekly excess (%)"), selected = "Weekly excess (%)"),
-                                      selectInput("area", "Area", area_opt, selected = "Italy"),
-                                      h6("The following changes according to the Area selected",style="color:#006d2c"),
-                                      uiOutput("ui")
-                        )),
-           tabPanel("About the app",
-                    tags$div(tags$br(),
-                             tags$h4("Last update: 2020/07/06"), 
-                             
-                      "This app was built to report interactively all the results from the study \"Excess mortality during the COVID-19 outbreak in Italy in February-May 2020\".",
-                      tags$br(),span(tags$i(h4("The paper is still not available online")), style="color:#8B0000"),tags$br()
-                      ,tags$h4("Background"), 
-                      "Italy was the first country outside China to experience the impact of the COVID-19 pandemic, which resulted in a significant health burden. 
-                      This study presents an analysis of the excess mortality across the 107 Italian provinces, stratified by sex, age group, and period of the outbreak.",
-                      tags$br(),
-                      tags$h4("Methods"), 
-                      "The analysis was performed using a two-stage interrupted time series design using daily mortality data for the period January 2015 - May 2020. 
-                      In the first stage, we performed province-level quasi-Poisson regression models, with smooth functions to define a baseline risk while accounting
-                      for trends and weather conditions and to flexibly estimate the variation in excess risk during the outbreak. Estimates were pooled in the second stage 
-                      using a mixed-effects multivariate meta-analysis. Excess deaths (absolute number and percentage) were aggregated at different geographical levels and 
-                      periods, and stratified in sex/age sub-groups.",
-                      tags$br(),tags$br(),tags$h4("Code"),
-                      "Code and input data used to generate the analysis are available at this ",tags$a(href="https://github.com/gasparrini/ItalyCOVIDdeath", "link."),tags$br(),
-                      "Code and input data used to generate this app are available at this ",tags$a(href="https://github.com/johnnyfreak82/Covid-19-italy", "link"),
-                      tags$br(),tags$br(),tags$h4("Sources"),
-                      tags$b("Mortality data: "), tags$a(href="https://www.istat.it/it/archivio/240401", "ISTAT"),tags$br(),
-                      tags$b("Temperature data: "), tags$a(href="https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=overview", "COPERNICUS ERA5 REANALYSIS"),tags$br(),
-                      tags$b("Influenza activity data: "), tags$a(href="https://old.iss.it/site/RMI/influnet/pagine/rapportoInflunet.aspx", "INFLUNET PROJECT"),tags$br(),
-                      tags$br(),tags$br(),tags$h4("Authors"),
-                      "Dr Antonio Gasparrini, London School of Hygiene & Tropical Medicine (analysis script)",tags$br(),
-                      "Matteo Scortichini, Department of Epidemiology, Lazio Regional Health Service (shinyapp script)",tags$br(),
-                      tags$br(),tags$br(),tags$h4("Contacts"),
-                      "antonio.gasparrini@lshtm.ac.uk",tags$br(),
-                      "m.scortichini@deplazio.it",tags$br())))
+  
+  tabPanel("Interactive map",
+    div(class="outer",
+      tags$head(
+        # Include our custom CSS
+        includeCSS("styles.css")
+        # includeScript("gomap.js")
+      ),    
+      
+      # If not using custom CSS, set height of leafletOutput to a number instead of percent
+      leafletOutput("myMap", width="100%", height="100%"),
+      
+      # Shiny versions prior to 0.11 should use class = "modal" instead.
+      absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
+        draggable = FALSE, top = 60, left = "auto", right = "auto", bottom = "auto",
+        width = 400, height = "auto",
+        
+        h2("Select population"),
+        
+        selectInput("agegroup", "Age category", age_opt,selected="All ages"),
+        selectInput("sex", "Sex", sex_opt, selected = "Total"),
+        selectInput("period", "Period", period_opt, selected = "15Feb-15May"),
+        
+        #plotOutput("excess_plot", height = 280),
+        h2("Select area to map"),
+        selectInput("mapping", "Map", c("Regions","Provinces"), selected = "Provinces"),
+        sliderInput(inputId = "opacity_slider", label = "Map opacity", min = 0, max = 1, value = 0.5),
+        span(tags$i(h4("Click on the map to get additional\narea specific informations")), style="color:#8B0000")                                      
+        
+        
+      ))),
+  tabPanel("Time trend",
+    fluidPage(theme = shinytheme("flatly")),
+    tags$head(
+      # Include our custom CSS
+      includeCSS("styles.css")
+      # includeScript("gomap.js")
+    ),
+    column(offset=4,width=8,br(),br(),br(),plotOutput("excess_plot",height="600px")),
+    
+    absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
+      draggable = FALSE, top = 60, left = "auto", right = "auto", bottom = "auto",
+      width = "auto", height = "auto",
+      
+      h2("Select population"),
+      
+      selectInput("agegroup2", "Age category", age_opt,selected="All ages"),
+      selectInput("sex2", "Sex", sex_opt, selected = "Total"),
+      selectInput("outcome", "Outcome",c("Daily deaths","Daily excess","Daily excess (%)"), selected = "Daily excess (%)"),
+      selectInput("area", "Area", area_opt, selected = "Italy"),
+      h6("The following changes according to the Area selected",style="color:#006d2c"),
+      uiOutput("ui")
+    )),
+  tabPanel("About the app",
+    tags$div(tags$br(),
+      "This app reports interactively all the results from the study \"Excess mortality during the COVID-19 outbreak in Italy: a two-stage interrupted time series analysis\".",
+      tags$br(),
+      span(tags$i(h4("The manuscript is still under submission and not available online")), style="color:#8B0000"),
+      tags$br(),
+      tags$h4("Code"),
+      "Code and input data used to generate the analysis are available at this ",tags$a(href="https://github.com/gasparrini/ItalyCOVIDdeath", "link."),tags$br(),
+      "Code and input data used to generate this app are available at this ",tags$a(href="https://github.com/johnnyfreak82/Covid-19-italy", "link"),
+      tags$br(),
+      tags$h4("Sources"),
+      tags$b("Mortality data: "), tags$a(href="https://www.istat.it/it/archivio/240401", "ISTAT"),tags$br(),
+      tags$b("Temperature data: "), tags$a(href="https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=overview", "COPERNICUS ERA5 REANALYSIS"),tags$br(),
+      tags$b("Influenza activity data: "), tags$a(href="https://old.iss.it/site/RMI/influnet/pagine/rapportoInflunet.aspx", "INFLUNET PROJECT"),
+      tags$br(),
+      tags$h4("Authors"),
+      "Matteo Scortichini, Department of Epidemiology, Lazio Regional Health Service",
+      tags$br(),
+      "Antonio Gasparrini, London School of Hygiene & Tropical Medicine",
+      tags$br(),
+      tags$h4("Contacts"),
+      "antonio.gasparrini@lshtm.ac.uk",tags$br(),
+      "m.scortichini@deplazio.it",tags$br(),
+      tags$br(),
+      tags$h4("Last update: 2020/07/06")
+    )
+  )
+)
 
 #SERVER
 server=function(input, output, session) {
   
-
+  
   output$ui <- renderUI({
-
+    
     
     switch(input$area,
-           "Italy" = selectInput("area_to_plot", "Italy","Italy",selected="Italy"),
-           "Macro areas" = selectInput("area_to_plot", "Macro area",macro_opt,selected="North"),
-           "Regions" = selectInput("area_to_plot", "Regions",region_opt,selected="Piemonte"),
-           "Provinces" = selectInput("area_to_plot", "Provinces",province_opt,selected="Torino")
+      "Italy" = selectInput("area_to_plot", "Italy","Italy",selected="Italy"),
+      "Macro areas" = selectInput("area_to_plot", "Macro area",macro_opt,selected="North"),
+      "Regions" = selectInput("area_to_plot", "Regions",region_opt,selected="Piemonte"),
+      "Provinces" = selectInput("area_to_plot", "Provinces",province_opt,selected="Torino")
     )
   })
-    
- plot_df <- reactive({
-   
-   req(input$area_to_plot)
+  
+  plot_df <- reactive({
+    req(input$area_to_plot)
     results_to_plot %>% dplyr::filter(Sex==input$sex2 & Age==input$agegroup2 & area_to_select==input$area_to_plot) 
-   })
- 
- 
-   
- plot_results=reactive({if(input$outcome=="Daily deaths") return(
-     qplot(data=plot_df(), x = period_n, y = d_deaths,col="red3",size=I(4)) + geom_point(size = 4,col="red3") +
-       ylab("Daily deaths") + theme_bw() + 
-       scale_y_continuous() +
-       theme_classic() + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5,size=15),
-                               axis.text.y = element_text(angle = 90, hjust = 1, vjust = 0.5,size=15),
-                               axis.title=element_text(size=14,face="bold"),
-                               legend.position="none") + scale_x_discrete(name="Week",limits=1:16,
-                                                                          labels=c("1 - 4 feb",
-                                                                                   "5 - 11 feb",
-                                                                                   "12 - 18 feb",
-                                                                                   "19 - 25 feb",
-                                                                                   "26 feb - 3 mar",
-                                                                                   "4 - 10 mar",
-                                                                                   "11 - 17 mar",
-                                                                                   "18 - 24 mar",
-                                                                                   "25 - 31 mar",
-                                                                                   "1 - 7 apr",
-                                                                                   "8 - 14 apr",
-                                                                                   "15 - 21 apr",
-                                                                                   "22 - 28 apr",
-                                                                                   "29 apr - 5 may",
-                                                                                   "6 - 12 may",
-                                                                                   "13 - 15 may"))) 
-   else if(input$outcome=="Daily Excess") return(
-     qplot(data=plot_df(), x = period_n, y = d_excess,col="red3",size=I(4)) + geom_errorbar(aes(ymin=plot_df()$d_excess_low, ymax=plot_df()$d_excess_high,col="red3")) +
-       ylab("Excess (daily deaths)") + theme_bw() + 
-       scale_y_continuous() +
-       theme_classic() + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5,size=15),
-                               axis.text.y = element_text(angle = 90, hjust = 1, vjust = 0.5,size=15),
-                               axis.title=element_text(size=14,face="bold"),
-                               legend.position="none") + scale_x_discrete(name="Week",limits=1:16,
-                                                                          labels=c("1 - 4 feb",
-                                                                                   "5 - 11 feb",
-                                                                                   "12 - 18 feb",
-                                                                                   "19 - 25 feb",
-                                                                                   "26 feb - 3 mar",
-                                                                                   "4 - 10 mar",
-                                                                                   "11 - 17 mar",
-                                                                                   "18 - 24 mar",
-                                                                                   "25 - 31 mar",
-                                                                                   "1 - 7 apr",
-                                                                                   "8 - 14 apr",
-                                                                                   "15 - 21 apr",
-                                                                                   "22 - 28 apr",
-                                                                                   "29 apr - 5 may",
-                                                                                   "6 - 12 may",
-                                                                                   "13 - 15 may")))
-   else return(qplot(data=plot_df(), x = period_n, y = ExcessPer,col="red3",size=I(4)) + geom_errorbar(aes(ymin=plot_df()$ExcessPer95eCIlow, ymax=plot_df()$ExcessPer95eCIhigh,col="red3")) +
-                 ylab("Excess (%)") + theme_bw() + 
-                 scale_y_continuous() +
-                 theme_classic() + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5,size=15),
-                                         axis.text.y = element_text(angle = 90, hjust = 1, vjust = 0.5,size=15),
-                                         axis.title=element_text(size=14,face="bold"),
-                                         legend.position="none") + scale_x_discrete(name="Week",limits=1:16,
-                                                                                    labels=c("1 - 4 feb",
-                                                                                             "5 - 11 feb",
-                                                                                             "12 - 18 feb",
-                                                                                             "19 - 25 feb",
-                                                                                             "26 feb - 3 mar",
-                                                                                             "4 - 10 mar",
-                                                                                             "11 - 17 mar",
-                                                                                             "18 - 24 mar",
-                                                                                             "25 - 31 mar",
-                                                                                             "1 - 7 apr",
-                                                                                             "8 - 14 apr",
-                                                                                             "15 - 21 apr",
-                                                                                             "22 - 28 apr",
-                                                                                             "29 apr - 5 may",
-                                                                                             "6 - 12 may",
-                                                                                             "13 - 15 may")))
-   
-   })
- 
-   output$excess_plot <- renderPlot({plot_results()
-     
-   })
-   
-    select_region <- reactive({
-       region_data=region_results %>% dplyr::filter(Sex==input$sex & Age==input$agegroup & period==input$period)
+  })
+  
+  
+  plot_results=reactive({
+    
+    # DEFINE OUTCOME
+    out <- switch(input$outcome, "Daily deaths"=plot_df()$d_deaths, 
+      "Daily excess"=plot_df()$d_excess, "Daily excess (%)"=plot_df()$ExcessPer)
+    cilow <- switch(input$outcome, "Daily deaths"=NULL, 
+      "Daily excess"=plot_df()$d_excess_low, "Daily excess (%)"=plot_df()$ExcessPer95eCIlow)
+    cihigh <- switch(input$outcome, "Daily deaths"=NULL, 
+      "Daily excess"=plot_df()$d_excess_high, "Daily excess (%)"=plot_df()$ExcessPer95eCIhigh)
+    
+    # DEFINE LABELS
+    seqpost <- seq(dmy(01022020), dmy(15052020), 1)
+    cutdate <- unique(c(dmy(01022020)-1,
+      seqpost[seqpost %in% tapply(seqpost, week(seqpost), last)]))
+    labperiod1 <- sapply(seq(length(cutdate)-1), function(i)
+      paste(paste0(day(cutdate[i]+1), month(cutdate[i]+1,lab=T)),
+        paste0(day(cutdate[i+1]), month(cutdate[i+1],lab=T)), sep="-"))
+    
+    # START PLOT
+    plot <- ggplot(plot_df(), aes(x=period_n, y=out))
+    
+    # ADD CI IF NEEDED
+    if(!is.null(cilow)) plot <- plot +
+      geom_ribbon(aes(ymin=cilow, ymax=cihigh), fill=grey(0.9))
+    if(input$outcome!="Daily deaths") plot <- plot + geom_hline(yintercept=0)
+    
+    # FINISH PLOT
+    plot + geom_line(col="red3") + geom_point(size=4, col="red3") +
+      ylab(input$outcome) + theme_bw() +
+      scale_y_continuous() +
+      theme_classic() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.5,size=12),
+        axis.text.y = element_text(angle = 90, hjust = 0.5, vjust = 0.5,size=15),
+        axis.title=element_text(size=14, face="bold"), legend.position="none",
+        aspect.ratio=3/4) +
+      scale_x_discrete(name="Week", limits=1:16, labels=labperiod1)
+  })
+  
+  output$excess_plot <- renderPlot({plot_results()
+    
+  })
+  
+  select_region <- reactive({
+    region_data=region_results %>% dplyr::filter(Sex==input$sex & Age==input$agegroup & period==input$period)
     region_data
-       })
-    
-    select_province <- reactive({
-      province_data=province_results %>% dplyr::filter(Sex==input$sex & Age==input$agegroup & period==input$period)
+  })
+  
+  select_province <- reactive({
+    province_data=province_results %>% dplyr::filter(Sex==input$sex & Age==input$agegroup & period==input$period)
     province_data})
-    
-    
-    province_map2=reactive({merge(province_map,select_province(),by="Province")})
-    region_map2= reactive({merge(region_map,select_region(),by="Region")})
-    
-    
-   province_cut=reactive({
-     prov_cut=quantile(province_map2()$ExcessPer,seq(0,1,0.1))
-     prov_cut}) 
-   region_cut=reactive({
-     reg_cut=quantile(region_map2()$ExcessPer,seq(0,1,0.2))
-     reg_cut}) 
-   
-   
-    
-   
-
-    pal_prov <-reactive({
-      pal_prov2=colorNumeric(
+  
+  
+  province_map2=reactive({merge(province_map,select_province(),by="Province")})
+  region_map2= reactive({merge(region_map,select_region(),by="Region")})
+  
+  
+  province_cut=reactive({
+    prov_cut=quantile(province_map2()$ExcessPer,seq(0,1,0.1))
+    prov_cut}) 
+  region_cut=reactive({
+    reg_cut=quantile(region_map2()$ExcessPer,seq(0,1,0.2))
+    reg_cut}) 
+  
+  
+  
+  
+  
+  pal_prov <-reactive({
+    pal_prov2=colorNumeric(
       rampa_prov,
       domain = province_map2()$Excess_Per
     )
-      pal_prov2}) 
-    pal_reg <- reactive({pal_reg2=colorNumeric(
-      rampa_reg,
-      domain = region_map2()$Excess_Per
-    )
-    pal_reg2})
+    pal_prov2}) 
+  pal_reg <- reactive({pal_reg2=colorNumeric(
+    rampa_reg,
+    domain = region_map2()$Excess_Per
+  )
+  pal_reg2})
   
-     content_prov <- reactive({paste(
-       
-       "<br><b>ID</b>:",province_map2()$Province,"</br>",
-       "<br><b>Age</b>: ",province_map2()$Age,"</br>",
-       "<br><b>Sex</b>: ",province_map2()$Sex,"</br>",
-       "<br><b>Period</b>: ",province_map2()$period,"</br>",
-       "<br><b>Deaths</b>: ",province_map2()$Deaths,"</br>",
-       "<br><b>Excess  (CI 95%)</b>: ",province_map2()$Excess,"(",province_map2()$Excess95eCIlow," - ",province_map2()$Excess95eCIhigh,")","</br>",
-       "<br><b>Percentage Excess  (CI 95%)</b>: ",province_map2()$ExcessPer,"(",province_map2()$ExcessPer95eCIlow," - "
-       ,province_map2()$ExcessPer95eCIhigh,")","</br>")
-     })
-     content_reg <- reactive({paste(
-       
-       "<br><b>ID</b>:",region_map2()$Region,"</br>",
-       "<br><b>Age</b>: ",region_map2()$Age,"</br>",
-       "<br><b>Sex</b>: ",region_map2()$Sex,"</br>",
-       "<br><b>Period</b>: ",region_map2()$period,"</br>",
-       "<br><b>Deaths</b>: ",region_map2()$Deaths,"</br>",
-       "<br><b>Excess  (CI 95%)</b>: ",region_map2()$Excess,"(",region_map2()$Excess95eCIlow," - ",region_map2()$Excess95eCIhigh,")","</br>",
-       "<br><b>Percentage Excess  (CI 95%)</b>: ",region_map2()$ExcessPer,"(",region_map2()$ExcessPer95eCIlow," - "
-       ,region_map2()$ExcessPer95eCIhigh,")","</br>")  
-     })
+  content_prov <- reactive({paste(
     
-finalMap <- reactive ({
-  if(input$mapping=="Provinces") return(leaflet(province_map2()) %>% addTiles() %>%
-                                       addPolygons(data=province_map2(),col=province_map2()$color,weight=2,fillOpacity = input$opacity_slider,layerId=~id,popup=content_prov()) %>% 
-                                         addLegend("topright", pal = pal_prov(), values=province_cut(),title = "Excess (%)",opacity = 1))
-                                       
-  else return (leaflet(region_map2()) %>% addTiles() %>%
-                 addPolygons(data=region_map2(),col=region_map2()$color,weight=2,fillOpacity = input$opacity_slider,layerId=~id,popup=content_reg()) %>% 
-                 addLegend("topright", pal = pal_reg(), values=region_cut(),title = "Excess (%)",opacity = 1))
-                 
-                 # setView(lng = 12.5113300, lat=41.8919300, zoom = 8.4))
-})
-output$myMap = renderLeaflet(finalMap())
+    "<br><b>ID</b>:",province_map2()$Province,"</br>",
+    "<br><b>Age</b>: ",province_map2()$Age,"</br>",
+    "<br><b>Sex</b>: ",province_map2()$Sex,"</br>",
+    "<br><b>Period</b>: ",province_map2()$period,"</br>",
+    "<br><b>Deaths</b>: ",province_map2()$Deaths,"</br>",
+    "<br><b>Excess  (CI 95%)</b>: ",province_map2()$Excess,"(",province_map2()$Excess95eCIlow," - ",province_map2()$Excess95eCIhigh,")","</br>",
+    "<br><b>Percentage Excess  (CI 95%)</b>: ",province_map2()$ExcessPer,"(",province_map2()$ExcessPer95eCIlow," - "
+    ,province_map2()$ExcessPer95eCIhigh,")","</br>")
+  })
+  content_reg <- reactive({paste(
+    
+    "<br><b>ID</b>:",region_map2()$Region,"</br>",
+    "<br><b>Age</b>: ",region_map2()$Age,"</br>",
+    "<br><b>Sex</b>: ",region_map2()$Sex,"</br>",
+    "<br><b>Period</b>: ",region_map2()$period,"</br>",
+    "<br><b>Deaths</b>: ",region_map2()$Deaths,"</br>",
+    "<br><b>Excess  (CI 95%)</b>: ",region_map2()$Excess,"(",region_map2()$Excess95eCIlow," - ",region_map2()$Excess95eCIhigh,")","</br>",
+    "<br><b>Percentage Excess  (CI 95%)</b>: ",region_map2()$ExcessPer,"(",region_map2()$ExcessPer95eCIlow," - "
+    ,region_map2()$ExcessPer95eCIhigh,")","</br>")  
+  })
   
-  }
+  finalMap <- reactive ({
+    if(input$mapping=="Provinces") return(leaflet(province_map2()) %>% addTiles() %>%
+        addPolygons(data=province_map2(),col=province_map2()$color,weight=2,fillOpacity = input$opacity_slider,layerId=~id,popup=content_prov()) %>% 
+        addLegend("topright", pal = pal_prov(), values=province_cut(),title = "Excess (%)",opacity = 1))
+    
+    else return (leaflet(region_map2()) %>% addTiles() %>%
+        addPolygons(data=region_map2(),col=region_map2()$color,weight=2,fillOpacity = input$opacity_slider,layerId=~id,popup=content_reg()) %>% 
+        addLegend("topright", pal = pal_reg(), values=region_cut(),title = "Excess (%)",opacity = 1))
+    
+    # setView(lng = 12.5113300, lat=41.8919300, zoom = 8.4))
+  })
+  output$myMap = renderLeaflet(finalMap())
+  
+}
 
 shinyApp(ui,server)
 
