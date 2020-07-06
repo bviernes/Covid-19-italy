@@ -204,7 +204,7 @@ server=function(input, output, session) {
     cutdate <- unique(c(dmy(01022020)-1,
       seqpost[seqpost %in% tapply(seqpost, week(seqpost), last)]))
     labperiod1 <- sapply(seq(length(cutdate)-1), function(i)
-      paste(paste0(day(cutdate[i]+1), month(cutdate[i]+1,lab=T)),
+      paste(paste0(day(cutdate[i]+1), format(cutdate[i]+1, format="%b")),
         paste0(day(cutdate[i+1]), month(cutdate[i+1],lab=T)), sep="-"))
     
     # START PLOT
