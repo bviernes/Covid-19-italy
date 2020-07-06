@@ -6,7 +6,6 @@ library(dplyr)
 library(ggplot2)
 library(shinythemes)
 library(data.table)
-
 #GLOBAL
 rbPal <- colorRampPalette(c('blue','red'))
 
@@ -138,7 +137,36 @@ ui <- navbarPage("Covid-19 mortality", id="nav",
                                       selectInput("area", "Area", area_opt, selected = "Italy"),
                                       h6("The following changes according to the Area selected",style="color:#006d2c"),
                                       uiOutput("ui")
-                        )))
+                        )),
+           tabPanel("About the app",
+                    tags$div(tags$br(),
+                             tags$h4("Last update: 2020/07/06"), 
+                             
+                      "This app was built to report interactively all the results from the study \"Excess mortality during the COVID-19 outbreak in Italy in February-May 2020\".",
+                      tags$br(),span(tags$i(h4("The paper is still not available online")), style="color:#8B0000"),tags$br()
+                      ,tags$h4("Background"), 
+                      "Italy was the first country outside China to experience the impact of the COVID-19 pandemic, which resulted in a significant health burden. 
+                      This study presents an analysis of the excess mortality across the 107 Italian provinces, stratified by sex, age group, and period of the outbreak.",
+                      tags$br(),
+                      tags$h4("Methods"), 
+                      "The analysis was performed using a two-stage interrupted time series design using daily mortality data for the period January 2015 - May 2020. 
+                      In the first stage, we performed province-level quasi-Poisson regression models, with smooth functions to define a baseline risk while accounting
+                      for trends and weather conditions and to flexibly estimate the variation in excess risk during the outbreak. Estimates were pooled in the second stage 
+                      using a mixed-effects multivariate meta-analysis. Excess deaths (absolute number and percentage) were aggregated at different geographical levels and 
+                      periods, and stratified in sex/age sub-groups.",
+                      tags$br(),tags$br(),tags$h4("Code"),
+                      "Code and input data used to generate the analysis are available at this ",tags$a(href="https://github.com/gasparrini/ItalyCOVIDdeath", "link."),tags$br(),
+                      "Code and input data used to generate this app are available at this ",tags$a(href="https://github.com/johnnyfreak82/Covid-19-italy", "link"),
+                      tags$br(),tags$br(),tags$h4("Sources"),
+                      tags$b("Mortality data: "), tags$a(href="https://www.istat.it/it/archivio/240401", "ISTAT"),tags$br(),
+                      tags$b("Temperature data: "), tags$a(href="https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=overview", "COPERNICUS ERA5 REANALYSIS"),tags$br(),
+                      tags$b("Influenza activity data: "), tags$a(href="https://old.iss.it/site/RMI/influnet/pagine/rapportoInflunet.aspx", "INFLUNET PROJECT"),tags$br(),
+                      tags$br(),tags$br(),tags$h4("Authors"),
+                      "Dr Antonio Gasparrini, London School of Hygiene & Tropical Medicine (analysis script)",tags$br(),
+                      "Matteo Scortichini, Department of Epidemiology, Lazio Regional Health Service (shinyapp script)",tags$br(),
+                      tags$br(),tags$br(),tags$h4("Contacts"),
+                      "antonio.gasparrini@lshtm.ac.uk",tags$br(),
+                      "m.scortichini@deplazio.it",tags$br())))
 
 #SERVER
 server=function(input, output, session) {
